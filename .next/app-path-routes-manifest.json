@@ -1,0 +1,12 @@
+{
+  "/_global-error/page": "/_global-error",
+  "/_not-found/page": "/_not-found",
+  "/clients/page": "/clients",
+  "/finances/page": "/finances",
+  "/leads/page": "/leads",
+  "/page": "/",
+  "/projects/page": "/projects",
+  "/settings/page": "/settings",
+  "/tasks/page": "/tasks",
+  "/team/page": "/team"
+}

@@ -62,6 +62,13 @@ import {
   AlertTriangle,
   Heart,
   Sparkles,
+  Linkedin,
+  Twitter,
+  Instagram,
+  Facebook,
+  Youtube,
+  Music2,
+  Link,
 } from "lucide-react"
 
 // Enhanced Client Interface with more details
@@ -98,6 +105,15 @@ interface Client {
   npsScore: number
   revenueGrowth: number
   activeCampaigns: number
+  socialLinks?: {
+    linkedin?: string
+    twitter?: string
+    instagram?: string
+    facebook?: string
+    youtube?: string
+    tiktok?: string
+    other?: string
+  }
 }
 
 const initialClients: Client[] = [
@@ -133,6 +149,11 @@ const initialClients: Client[] = [
     npsScore: 9,
     revenueGrowth: 23,
     activeCampaigns: 5,
+    socialLinks: {
+      linkedin: "linkedin.com/company/techmart",
+      twitter: "twitter.com/techmart",
+      instagram: "instagram.com/techmart",
+    },
   },
   {
     id: "2",
@@ -166,6 +187,10 @@ const initialClients: Client[] = [
     npsScore: 8,
     revenueGrowth: 15,
     activeCampaigns: 3,
+    socialLinks: {
+      linkedin: "linkedin.com/company/greenlife",
+      facebook: "facebook.com/greenlifeorganics",
+    },
   },
   {
     id: "3",
@@ -199,6 +224,11 @@ const initialClients: Client[] = [
     npsScore: 7,
     revenueGrowth: 8,
     activeCampaigns: 2,
+    socialLinks: {
+      instagram: "instagram.com/foodiehub",
+      tiktok: "tiktok.com/@foodiehub",
+      youtube: "youtube.com/c/foodiehub",
+    },
   },
   {
     id: "4",
@@ -544,7 +574,7 @@ export default function ClientsPage() {
     activeProjects: clients.reduce((sum, c) => sum + c.activeProjects, 0),
     avgHealthScore: Math.round(
       clients.filter((c) => c.status === "active").reduce((sum, c) => sum + c.healthScore, 0) /
-        clients.filter((c) => c.status === "active").length,
+      clients.filter((c) => c.status === "active").length,
     ),
     avgNPS: (
       clients.filter((c) => c.npsScore > 0).reduce((sum, c) => sum + c.npsScore, 0) /
@@ -639,6 +669,15 @@ export default function ClientsPage() {
       npsScore: 0,
       revenueGrowth: 0,
       activeCampaigns: 0,
+      socialLinks: {
+        linkedin: formData.get("linkedin") as string,
+        twitter: formData.get("twitter") as string,
+        instagram: formData.get("instagram") as string,
+        facebook: formData.get("facebook") as string,
+        youtube: formData.get("youtube") as string,
+        tiktok: formData.get("tiktok") as string,
+        other: formData.get("other") as string,
+      },
     }
     setClients([newClient, ...clients])
     setIsAddDialogOpen(false)
@@ -767,6 +806,45 @@ export default function ClientsPage() {
                     <div className="space-y-2">
                       <Label htmlFor="address">Address</Label>
                       <Input id="address" name="address" placeholder="123 Main St, City, State" />
+                    </div>
+                  </div>
+
+                  <Separator />
+                  <div className="space-y-3">
+                    <Label className="text-sm font-semibold">Social Media Links</Label>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="linkedin" className="text-xs">LinkedIn</Label>
+                        <Input id="linkedin" name="linkedin" placeholder="linkedin.com/in/username" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="twitter" className="text-xs">Twitter</Label>
+                        <Input id="twitter" name="twitter" placeholder="twitter.com/username" />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="instagram" className="text-xs">Instagram</Label>
+                        <Input id="instagram" name="instagram" placeholder="instagram.com/username" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="facebook" className="text-xs">Facebook</Label>
+                        <Input id="facebook" name="facebook" placeholder="facebook.com/username" />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="youtube" className="text-xs">YouTube</Label>
+                        <Input id="youtube" name="youtube" placeholder="youtube.com/c/channel" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="tiktok" className="text-xs">TikTok</Label>
+                        <Input id="tiktok" name="tiktok" placeholder="tiktok.com/@username" />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="other" className="text-xs">Other / Website</Label>
+                      <Input id="other" name="other" placeholder="otherlink.com" />
                     </div>
                   </div>
                   <div className="space-y-2">
@@ -1008,9 +1086,8 @@ export default function ClientsPage() {
               return (
                 <div
                   key={status}
-                  className={`flex-shrink-0 w-[320px] rounded-xl transition-all duration-200 ${
-                    dragOverStatus === status ? "bg-primary/10 ring-2 ring-primary/50" : "bg-card/30"
-                  }`}
+                  className={`flex-shrink-0 w-[320px] rounded-xl transition-all duration-200 ${dragOverStatus === status ? "bg-primary/10 ring-2 ring-primary/50" : "bg-card/30"
+                    }`}
                   onDragOver={(e) => handleDragOver(e, status)}
                   onDragLeave={handleDragLeave}
                   onDrop={(e) => handleDrop(e, status)}
@@ -1038,9 +1115,8 @@ export default function ClientsPage() {
                           draggable
                           onDragStart={(e) => handleDragStart(e, client)}
                           onClick={() => setSelectedClient(client)}
-                          className={`group p-3 bg-card border border-border/50 rounded-lg cursor-grab active:cursor-grabbing hover:border-border hover:shadow-lg transition-all duration-200 animate-in fade-in slide-in-from-bottom-2 ${
-                            draggedClient?.id === client.id ? "opacity-50 scale-95" : ""
-                          }`}
+                          className={`group p-3 bg-card border border-border/50 rounded-lg cursor-grab active:cursor-grabbing hover:border-border hover:shadow-lg transition-all duration-200 animate-in fade-in slide-in-from-bottom-2 ${draggedClient?.id === client.id ? "opacity-50 scale-95" : ""
+                            }`}
                           style={{ animationDelay: `${i * 30}ms` }}
                         >
                           {/* Card Header */}
@@ -1647,6 +1723,63 @@ export default function ClientsPage() {
                             <span>Client since {new Date(selectedClient.joinedDate).toLocaleDateString()}</span>
                           </div>
                         </div>
+
+                        {selectedClient.socialLinks && Object.values(selectedClient.socialLinks).some(Boolean) && (
+                          <div className="mt-6 pt-6 border-t border-border/50">
+                            <h4 className="text-sm font-medium mb-3">Social Media & Links</h4>
+                            <div className="flex flex-wrap gap-2">
+                              {selectedClient.socialLinks.linkedin && (
+                                <Button variant="outline" size="sm" className="h-9 w-9 p-0 rounded-full bg-secondary/30 hover:bg-primary/20 hover:text-primary border-0 transition-all duration-300" asChild title="LinkedIn">
+                                  <a href={`https://${selectedClient.socialLinks.linkedin}`} target="_blank" rel="noopener noreferrer">
+                                    <Linkedin className="w-4 h-4" />
+                                  </a>
+                                </Button>
+                              )}
+                              {selectedClient.socialLinks.twitter && (
+                                <Button variant="outline" size="sm" className="h-9 w-9 p-0 rounded-full bg-secondary/30 hover:bg-primary/20 hover:text-primary border-0 transition-all duration-300" asChild title="Twitter">
+                                  <a href={`https://${selectedClient.socialLinks.twitter}`} target="_blank" rel="noopener noreferrer">
+                                    <Twitter className="w-4 h-4" />
+                                  </a>
+                                </Button>
+                              )}
+                              {selectedClient.socialLinks.instagram && (
+                                <Button variant="outline" size="sm" className="h-9 w-9 p-0 rounded-full bg-secondary/30 hover:bg-primary/20 hover:text-primary border-0 transition-all duration-300" asChild title="Instagram">
+                                  <a href={`https://${selectedClient.socialLinks.instagram}`} target="_blank" rel="noopener noreferrer">
+                                    <Instagram className="w-4 h-4" />
+                                  </a>
+                                </Button>
+                              )}
+                              {selectedClient.socialLinks.facebook && (
+                                <Button variant="outline" size="sm" className="h-9 w-9 p-0 rounded-full bg-secondary/30 hover:bg-primary/20 hover:text-primary border-0 transition-all duration-300" asChild title="Facebook">
+                                  <a href={`https://${selectedClient.socialLinks.facebook}`} target="_blank" rel="noopener noreferrer">
+                                    <Facebook className="w-4 h-4" />
+                                  </a>
+                                </Button>
+                              )}
+                              {selectedClient.socialLinks.youtube && (
+                                <Button variant="outline" size="sm" className="h-9 w-9 p-0 rounded-full bg-secondary/30 hover:bg-primary/20 hover:text-primary border-0 transition-all duration-300" asChild title="YouTube">
+                                  <a href={`https://${selectedClient.socialLinks.youtube}`} target="_blank" rel="noopener noreferrer">
+                                    <Youtube className="w-4 h-4" />
+                                  </a>
+                                </Button>
+                              )}
+                              {selectedClient.socialLinks.tiktok && (
+                                <Button variant="outline" size="sm" className="h-9 w-9 p-0 rounded-full bg-secondary/30 hover:bg-primary/20 hover:text-primary border-0 transition-all duration-300" asChild title="TikTok">
+                                  <a href={`https://${selectedClient.socialLinks.tiktok}`} target="_blank" rel="noopener noreferrer">
+                                    <Music2 className="w-4 h-4" />
+                                  </a>
+                                </Button>
+                              )}
+                              {selectedClient.socialLinks.other && (
+                                <Button variant="outline" size="sm" className="h-9 w-9 p-0 rounded-full bg-secondary/30 hover:bg-primary/20 hover:text-primary border-0 transition-all duration-300" asChild title="Other Link">
+                                  <a href={`https://${selectedClient.socialLinks.other}`} target="_blank" rel="noopener noreferrer">
+                                    <Link className="w-4 h-4" />
+                                  </a>
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                        )}
                       </div>
 
                       {/* Tags */}

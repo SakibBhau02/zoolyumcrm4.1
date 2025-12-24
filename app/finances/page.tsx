@@ -779,7 +779,178 @@ export default function FinancesPage() {
     recurring: "all",
   })
 
-  const totalRevenue = invoices.reduce((sum, inv) => sum + inv.paid, 0)
+  // Add state for dialogs
+  const [isAddIncomeOpen, setIsAddIncomeOpen] = useState(false)
+  const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false)
+
+  // Add state for new income form
+  const [newIncome, setNewIncome] = useState({
+    description: "",
+    category: "Project",
+    amount: 0,
+    date: new Date().toISOString().split("T")[0],
+    client: "",
+    project: "",
+    status: "received",
+    paymentMethod: "Bank Transfer",
+    recurring: false,
+    taxAmount: 0,
+  })
+
+  // Add state for new expense form
+  const [newExpense, setNewExpense] = useState({
+    description: "",
+    category: "Software",
+    amount: 0,
+    date: new Date().toISOString().split("T")[0],
+    vendor: "",
+    status: "paid",
+    recurring: false,
+    recurringFrequency: "monthly",
+    approvalStatus: "approved",
+    approvedBy: "Sarah Chen",
+    paymentMethod: "Credit Card",
+    taxDeductible: true,
+    notes: "",
+    department: "Operations",
+    project: "",
+  })
+
+  const handleAddIncome = () => {
+    const incomeToAdd = {
+      ...newIncome,
+      id: income.length + 1,
+      amount: Number(newIncome.amount),
+      taxAmount: Number(newIncome.taxAmount),
+    }
+    setIncome([incomeToAdd, ...income])
+    setIsAddIncomeOpen(false)
+    setNewIncome({
+      description: "",
+      category: "Project",
+      amount: 0,
+      date: new Date().toISOString().split("T")[0],
+      client: "",
+      project: "",
+      status: "received",
+      paymentMethod: "Bank Transfer",
+      recurring: false,
+      taxAmount: 0,
+    })
+  }
+
+  const handleAddExpense = () => {
+    const expenseToAdd = {
+      ...newExpense,
+      id: expenses.length + 1,
+      amount: Number(newExpense.amount),
+      recurringFrequency: newExpense.recurring ? newExpense.recurringFrequency : null,
+    }
+    setExpenses([expenseToAdd, ...expenses])
+    setIsAddExpenseOpen(false)
+    setNewExpense({
+      description: "",
+      category: "Software",
+      amount: 0,
+      date: new Date().toISOString().split("T")[0],
+      vendor: "",
+      status: "paid",
+      recurring: false,
+      recurringFrequency: "monthly",
+      approvalStatus: "approved",
+      approvedBy: "Sarah Chen",
+      paymentMethod: "Credit Card",
+      taxDeductible: true,
+      notes: "",
+      department: "Operations",
+      project: "",
+    })
+  }
+
+  // Add state for new invoice form
+  const [isNewInvoiceOpen, setIsNewInvoiceOpen] = useState(false)
+  const [newInvoiceData, setNewInvoiceData] = useState({
+    client: "",
+    project: "",
+    issueDate: new Date().toISOString().split("T")[0],
+    dueDate: "",
+    paymentTerms: "Net 30",
+    paymentMethod: "Bank Transfer",
+    category: "development",
+    notes: "",
+    internalNotes: "",
+    items: [{ id: 1, description: "", quantity: 1, rate: 0, amount: 0, taxable: true }],
+    tax: 8,
+    discount: 0,
+    recurringInvoice: false,
+  })
+
+  const handleAddInvoice = (status: "draft" | "sent") => {
+    const subtotal = newInvoiceData.items.reduce((sum, item) => sum + item.amount, 0)
+    const taxAmount = (subtotal * newInvoiceData.tax) / 100
+    const total = subtotal + taxAmount - newInvoiceData.discount
+
+    const invoiceToAdd = {
+      id: `INV-2024-${String(invoices.length + 1).padStart(3, "0")}`,
+      invoiceNumber: `INV-2024-${String(invoices.length + 1).padStart(3, "0")}`,
+      client: newInvoiceData.client || "New Client",
+      clientEmail: "contact@client.com",
+      clientLogo: "/placeholder.svg?height=40&width=40",
+      project: newInvoiceData.project || "New Project",
+      projectId: `PRJ-${String(invoices.length + 1).padStart(3, "0")}`,
+      amount: total,
+      paid: 0,
+      tax: taxAmount,
+      discount: newInvoiceData.discount,
+      status: status,
+      dueDate: newInvoiceData.dueDate || new Date().toISOString().split("T")[0],
+      issueDate: newInvoiceData.issueDate,
+      paidDate: null,
+      paymentMethod: newInvoiceData.paymentMethod,
+      paymentTerms: newInvoiceData.paymentTerms,
+      currency: "USD",
+      items: newInvoiceData.items,
+      notes: newInvoiceData.notes,
+      internalNotes: newInvoiceData.internalNotes,
+      category: newInvoiceData.category,
+      recurringInvoice: newInvoiceData.recurringInvoice,
+      attachments: [],
+    }
+
+    setInvoices([invoiceToAdd, ...invoices])
+  }
+
+  const handleAddLineItem = () => {
+    setNewInvoiceData({
+      ...newInvoiceData,
+      items: [
+        ...newInvoiceData.items,
+        { id: newInvoiceData.items.length + 1, description: "", quantity: 1, rate: 0, amount: 0, taxable: true },
+      ],
+    })
+  }
+
+  const handleUpdateLineItem = (id: number, field: string, value: any) => {
+    const updatedItems = newInvoiceData.items.map((item) => {
+      if (item.id === id) {
+        const updatedItem = { ...item, [field]: value }
+        if (field === "quantity" || field === "rate") {
+          updatedItem.amount = updatedItem.quantity * updatedItem.rate
+        }
+        return updatedItem
+      }
+      return item
+    })
+    setNewInvoiceData({ ...newInvoiceData, items: updatedItems })
+  }
+
+  const calculateSubtotal = () => newInvoiceData.items.reduce((sum, item) => sum + item.amount, 0)
+  const calculateTotal = () => {
+    const subtotal = calculateSubtotal()
+    return subtotal + (subtotal * newInvoiceData.tax) / 100 - newInvoiceData.discount
+  }
+
+  const totalRevenue = income.filter((inc) => inc.status === "received").reduce((sum, inc) => sum + inc.amount, 0)
   const totalPending = invoices.reduce((sum, inv) => sum + (inv.status !== "paid" ? inv.amount - inv.paid : 0), 0)
   const totalExpenses = expenses.filter((exp) => exp.status === "paid").reduce((sum, exp) => sum + exp.amount, 0)
   const pendingExpenses = expenses
@@ -793,6 +964,26 @@ export default function FinancesPage() {
   const totalTax = invoices.reduce((sum, inv) => sum + inv.tax, 0)
   const avgInvoiceValue = invoices.length > 0 ? totalInvoiced / invoices.length : 0
   const recurringRevenue = income.filter((inc) => inc.recurring).reduce((sum, inc) => sum + inc.amount, 0)
+
+  // Dynamic income category data for charts
+  const dynamicIncomeCategoryData = Array.from(new Set(income.map((i) => i.category))).map((cat, idx) => {
+    const colors = ["#6366f1", "#22c55e", "#f59e0b", "#ec4899", "#8b5cf6", "#06b6d4"]
+    return {
+      name: cat,
+      value: income.filter((i) => i.category === cat).reduce((sum, i) => sum + i.amount, 0),
+      color: colors[idx % colors.length],
+    }
+  })
+
+  // Dynamic expense category data for charts
+  const dynamicExpenseCategoryData = Array.from(new Set(expenses.map((e) => e.category))).map((cat, idx) => {
+    const colors = ["#6366f1", "#22c55e", "#f59e0b", "#ec4899", "#8b5cf6", "#14b8a6", "#f97316", "#a855f7", "#06b6d4"]
+    return {
+      name: cat,
+      value: expenses.filter((e) => e.category === cat).reduce((sum, e) => sum + e.amount, 0),
+      color: colors[idx % colors.length],
+    }
+  })
 
   // Filter invoices
   const filteredInvoices = invoices.filter((invoice) => {
@@ -900,7 +1091,7 @@ export default function FinancesPage() {
               <Upload className="mr-2 h-4 w-4" />
               Import
             </Button>
-            <Dialog>
+            <Dialog open={isNewInvoiceOpen} onOpenChange={setIsNewInvoiceOpen}>
               <DialogTrigger asChild>
                 <Button size="sm">
                   <Plus className="mr-2 h-4 w-4" />
@@ -915,30 +1106,36 @@ export default function FinancesPage() {
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="client">Client *</Label>
-                      <Select>
+                      <Select
+                        value={newInvoiceData.client}
+                        onValueChange={(val) => setNewInvoiceData({ ...newInvoiceData, client: val })}
+                      >
                         <SelectTrigger id="client">
                           <SelectValue placeholder="Select client" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="techcorp">TechCorp Inc</SelectItem>
-                          <SelectItem value="startup">StartupXYZ</SelectItem>
-                          <SelectItem value="growth">GrowthLabs</SelectItem>
-                          <SelectItem value="media">MediaFlow</SelectItem>
-                          <SelectItem value="brand">BrandFirst</SelectItem>
+                          <SelectItem value="TechCorp Inc">TechCorp Inc</SelectItem>
+                          <SelectItem value="StartupXYZ">StartupXYZ</SelectItem>
+                          <SelectItem value="GrowthLabs">GrowthLabs</SelectItem>
+                          <SelectItem value="MediaFlow">MediaFlow</SelectItem>
+                          <SelectItem value="BrandFirst">BrandFirst</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="project">Project *</Label>
-                      <Select>
+                      <Select
+                        value={newInvoiceData.project}
+                        onValueChange={(val) => setNewInvoiceData({ ...newInvoiceData, project: val })}
+                      >
                         <SelectTrigger id="project">
                           <SelectValue placeholder="Select project" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="web">Website Redesign</SelectItem>
-                          <SelectItem value="seo">SEO Campaign</SelectItem>
-                          <SelectItem value="social">Social Media Management</SelectItem>
-                          <SelectItem value="video">Video Production</SelectItem>
+                          <SelectItem value="Website Redesign">Website Redesign</SelectItem>
+                          <SelectItem value="SEO Campaign">SEO Campaign</SelectItem>
+                          <SelectItem value="Social Media Management">Social Media Management</SelectItem>
+                          <SelectItem value="Video Production">Video Production</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -947,23 +1144,36 @@ export default function FinancesPage() {
                   <div className="grid grid-cols-3 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="issueDate">Issue Date *</Label>
-                      <Input id="issueDate" type="date" defaultValue={new Date().toISOString().split("T")[0]} />
+                      <Input
+                        id="issueDate"
+                        type="date"
+                        value={newInvoiceData.issueDate}
+                        onChange={(e) => setNewInvoiceData({ ...newInvoiceData, issueDate: e.target.value })}
+                      />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="dueDate">Due Date *</Label>
-                      <Input id="dueDate" type="date" />
+                      <Input
+                        id="dueDate"
+                        type="date"
+                        value={newInvoiceData.dueDate}
+                        onChange={(e) => setNewInvoiceData({ ...newInvoiceData, dueDate: e.target.value })}
+                      />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="paymentTerms">Payment Terms</Label>
-                      <Select>
+                      <Select
+                        value={newInvoiceData.paymentTerms}
+                        onValueChange={(val) => setNewInvoiceData({ ...newInvoiceData, paymentTerms: val })}
+                      >
                         <SelectTrigger id="paymentTerms">
                           <SelectValue placeholder="Select terms" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="net15">Net 15</SelectItem>
-                          <SelectItem value="net30">Net 30</SelectItem>
-                          <SelectItem value="net45">Net 45</SelectItem>
-                          <SelectItem value="due-on-receipt">Due on Receipt</SelectItem>
+                          <SelectItem value="Net 15">Net 15</SelectItem>
+                          <SelectItem value="Net 30">Net 30</SelectItem>
+                          <SelectItem value="Net 45">Net 45</SelectItem>
+                          <SelectItem value="Due on Receipt">Due on Receipt</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -972,22 +1182,28 @@ export default function FinancesPage() {
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="paymentMethod">Payment Method</Label>
-                      <Select>
+                      <Select
+                        value={newInvoiceData.paymentMethod}
+                        onValueChange={(val) => setNewInvoiceData({ ...newInvoiceData, paymentMethod: val })}
+                      >
                         <SelectTrigger id="paymentMethod">
                           <SelectValue placeholder="Select method" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="bank">Bank Transfer</SelectItem>
-                          <SelectItem value="card">Credit Card</SelectItem>
-                          <SelectItem value="ach">ACH</SelectItem>
-                          <SelectItem value="wire">Wire Transfer</SelectItem>
-                          <SelectItem value="paypal">PayPal</SelectItem>
+                          <SelectItem value="Bank Transfer">Bank Transfer</SelectItem>
+                          <SelectItem value="Credit Card">Credit Card</SelectItem>
+                          <SelectItem value="ACH">ACH</SelectItem>
+                          <SelectItem value="Wire Transfer">Wire Transfer</SelectItem>
+                          <SelectItem value="PayPal">PayPal</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="category">Category</Label>
-                      <Select>
+                      <Select
+                        value={newInvoiceData.category}
+                        onValueChange={(val) => setNewInvoiceData({ ...newInvoiceData, category: val })}
+                      >
                         <SelectTrigger id="category">
                           <SelectValue placeholder="Select category" />
                         </SelectTrigger>
@@ -1006,10 +1222,16 @@ export default function FinancesPage() {
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       <Label>Line Items *</Label>
-                      <Checkbox id="recurring" />
-                      <Label htmlFor="recurring" className="text-sm font-normal">
-                        Recurring Invoice
-                      </Label>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="recurring"
+                          checked={newInvoiceData.recurringInvoice}
+                          onCheckedChange={(val) => setNewInvoiceData({ ...newInvoiceData, recurringInvoice: !!val })}
+                        />
+                        <Label htmlFor="recurring" className="text-sm font-normal cursor-pointer">
+                          Recurring Invoice
+                        </Label>
+                      </div>
                     </div>
                     <div className="border rounded-lg p-4 space-y-3 bg-muted/30">
                       <div className="grid grid-cols-12 gap-2 text-xs font-medium text-muted-foreground">
@@ -1019,16 +1241,48 @@ export default function FinancesPage() {
                         <div className="col-span-2">Amount</div>
                         <div className="col-span-1"></div>
                       </div>
-                      <div className="grid grid-cols-12 gap-2 items-center">
-                        <Input className="col-span-5" placeholder="Service or product description" />
-                        <Input className="col-span-2" type="number" placeholder="1" defaultValue="1" />
-                        <Input className="col-span-2" type="number" placeholder="0.00" step="0.01" />
-                        <div className="col-span-2 text-sm font-medium">$0.00</div>
-                        <Button variant="ghost" size="icon" className="col-span-1">
-                          <Trash2 className="h-4 w-4 text-muted-foreground" />
-                        </Button>
-                      </div>
-                      <Button variant="outline" size="sm" className="w-full bg-transparent">
+                      {newInvoiceData.items.map((item) => (
+                        <div key={item.id} className="grid grid-cols-12 gap-2 items-center">
+                          <Input
+                            className="col-span-5"
+                            placeholder="Service or product description"
+                            value={item.description}
+                            onChange={(e) => handleUpdateLineItem(item.id, "description", e.target.value)}
+                          />
+                          <Input
+                            className="col-span-2"
+                            type="number"
+                            placeholder="1"
+                            value={item.quantity}
+                            onChange={(e) => handleUpdateLineItem(item.id, "quantity", Number(e.target.value))}
+                          />
+                          <Input
+                            className="col-span-2"
+                            type="number"
+                            placeholder="0.00"
+                            step="0.01"
+                            value={item.rate}
+                            onChange={(e) => handleUpdateLineItem(item.id, "rate", Number(e.target.value))}
+                          />
+                          <div className="col-span-2 text-sm font-medium">{formatCurrency(item.amount)}</div>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="col-span-1"
+                            onClick={() => {
+                              if (newInvoiceData.items.length > 1) {
+                                setNewInvoiceData({
+                                  ...newInvoiceData,
+                                  items: newInvoiceData.items.filter((i) => i.id !== item.id),
+                                })
+                              }
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4 text-muted-foreground" />
+                          </Button>
+                        </div>
+                      ))}
+                      <Button variant="outline" size="sm" className="w-full bg-transparent" onClick={handleAddLineItem}>
                         <Plus className="mr-2 h-4 w-4" />
                         Add Line Item
                       </Button>
@@ -1038,35 +1292,76 @@ export default function FinancesPage() {
                   <div className="grid grid-cols-3 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="subtotal">Subtotal</Label>
-                      <Input id="subtotal" value="$0.00" disabled />
+                      <Input id="subtotal" value={formatCurrency(calculateSubtotal())} disabled />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="tax">Tax (%)</Label>
-                      <Input id="tax" type="number" placeholder="8" step="0.1" />
+                      <Input
+                        id="tax"
+                        type="number"
+                        placeholder="8"
+                        step="0.1"
+                        value={newInvoiceData.tax}
+                        onChange={(e) => setNewInvoiceData({ ...newInvoiceData, tax: Number(e.target.value) })}
+                      />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="discount">Discount ($)</Label>
-                      <Input id="discount" type="number" placeholder="0.00" step="0.01" />
+                      <Input
+                        id="discount"
+                        type="number"
+                        placeholder="0.00"
+                        step="0.01"
+                        value={newInvoiceData.discount}
+                        onChange={(e) => setNewInvoiceData({ ...newInvoiceData, discount: Number(e.target.value) })}
+                      />
                     </div>
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="notes">Invoice Notes</Label>
-                    <Textarea id="notes" placeholder="Thank you for your business..." rows={3} />
+                    <Label htmlFor="inv-notes">Invoice Notes</Label>
+                    <Textarea
+                      id="inv-notes"
+                      placeholder="Thank you for your business..."
+                      rows={3}
+                      value={newInvoiceData.notes}
+                      onChange={(e) => setNewInvoiceData({ ...newInvoiceData, notes: e.target.value })}
+                    />
                   </div>
 
                   <div className="space-y-2">
                     <Label htmlFor="internalNotes">Internal Notes (Private)</Label>
-                    <Textarea id="internalNotes" placeholder="Notes for internal use only..." rows={2} />
+                    <Textarea
+                      id="internalNotes"
+                      placeholder="Notes for internal use only..."
+                      rows={2}
+                      value={newInvoiceData.internalNotes}
+                      onChange={(e) => setNewInvoiceData({ ...newInvoiceData, internalNotes: e.target.value })}
+                    />
                   </div>
 
                   <div className="flex justify-between items-center pt-4 border-t">
                     <div className="text-lg font-bold">
-                      Total: <span className="text-2xl text-primary">$0.00</span>
+                      Total: <span className="text-2xl text-primary">{formatCurrency(calculateTotal())}</span>
                     </div>
                     <div className="flex gap-2">
-                      <Button variant="outline">Save as Draft</Button>
-                      <Button>Create & Send Invoice</Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          handleAddInvoice("draft")
+                          setIsNewInvoiceOpen(false)
+                        }}
+                      >
+                        Save as Draft
+                      </Button>
+                      <Button
+                        onClick={() => {
+                          handleAddInvoice("sent")
+                          setIsNewInvoiceOpen(false)
+                        }}
+                      >
+                        Create & Send Invoice
+                      </Button>
                     </div>
                   </div>
                 </div>
@@ -1243,8 +1538,8 @@ export default function FinancesPage() {
                 <CardContent>
                   <ResponsiveContainer width="100%" height={280}>
                     <RechartsPieChart>
-                      <Pie data={incomeCategoryData} cx="50%" cy="50%" outerRadius={80} dataKey="value" label>
-                        {incomeCategoryData.map((entry, index) => (
+                      <Pie data={dynamicIncomeCategoryData} cx="50%" cy="50%" outerRadius={80} dataKey="value" label>
+                        {dynamicIncomeCategoryData.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={entry.color} />
                         ))}
                       </Pie>
@@ -1258,7 +1553,7 @@ export default function FinancesPage() {
                     </RechartsPieChart>
                   </ResponsiveContainer>
                   <div className="grid grid-cols-2 gap-2 mt-4">
-                    {incomeCategoryData.map((cat) => (
+                    {dynamicIncomeCategoryData.map((cat) => (
                       <div key={cat.name} className="flex items-center gap-2">
                         <div className="w-3 h-3 rounded" style={{ backgroundColor: cat.color }} />
                         <span className="text-sm text-muted-foreground">{cat.name}</span>
@@ -1277,8 +1572,8 @@ export default function FinancesPage() {
                 <CardContent>
                   <ResponsiveContainer width="100%" height={280}>
                     <RechartsPieChart>
-                      <Pie data={expenseCategoryData} cx="50%" cy="50%" outerRadius={80} dataKey="value" label>
-                        {expenseCategoryData.map((entry, index) => (
+                      <Pie data={dynamicExpenseCategoryData} cx="50%" cy="50%" outerRadius={80} dataKey="value" label>
+                        {dynamicExpenseCategoryData.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={entry.color} />
                         ))}
                       </Pie>
@@ -1292,7 +1587,7 @@ export default function FinancesPage() {
                     </RechartsPieChart>
                   </ResponsiveContainer>
                   <div className="grid grid-cols-2 gap-2 mt-4">
-                    {expenseCategoryData.slice(0, 6).map((cat) => (
+                    {dynamicExpenseCategoryData.slice(0, 6).map((cat) => (
                       <div key={cat.name} className="flex items-center gap-2">
                         <div className="w-3 h-3 rounded" style={{ backgroundColor: cat.color }} />
                         <span className="text-sm text-muted-foreground">{cat.name}</span>
@@ -1379,14 +1674,14 @@ export default function FinancesPage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {[...invoices, ...expenses.map((e) => ({ ...e, type: "expense" }))]
+                  {[...income.map(i => ({ ...i, type: 'income' })), ...expenses.map((e) => ({ ...e, type: "expense" }))]
                     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
                     .slice(0, 8)
                     .map((item) => {
-                      const isExpense = "vendor" in item
+                      const isExpense = item.type === "expense"
                       return (
                         <div
-                          key={item.id}
+                          key={`${item.type}-${item.id}`}
                           className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50 transition-colors"
                         >
                           <div className="flex items-center gap-3">
@@ -1398,9 +1693,9 @@ export default function FinancesPage() {
                               )}
                             </div>
                             <div>
-                              <p className="font-medium">{isExpense ? item.description : (item as any).client}</p>
+                              <p className="font-medium">{item.description}</p>
                               <p className="text-sm text-muted-foreground">
-                                {isExpense ? (item as any).vendor : (item as any).project} • {formatDate(item.date)}
+                                {isExpense ? (item as any).vendor : (item as any).client} • {formatDate(item.date)}
                               </p>
                             </div>
                           </div>
@@ -1409,11 +1704,9 @@ export default function FinancesPage() {
                               {isExpense ? "-" : "+"}
                               {formatCurrency(item.amount)}
                             </p>
-                            {!isExpense && (
-                              <Badge variant="secondary" className="text-xs">
-                                {statusConfig[(item as any).status]?.label || (item as any).status}
-                              </Badge>
-                            )}
+                            <Badge variant="secondary" className="text-xs">
+                              {item.status}
+                            </Badge>
                           </div>
                         </div>
                       )
@@ -1765,8 +2058,8 @@ export default function FinancesPage() {
                                                 <span className="font-medium">
                                                   {formatCurrency(
                                                     selectedInvoice.amount -
-                                                      selectedInvoice.tax +
-                                                      selectedInvoice.discount,
+                                                    selectedInvoice.tax +
+                                                    selectedInvoice.discount,
                                                   )}
                                                 </span>
                                               </div>
@@ -2202,10 +2495,166 @@ export default function FinancesPage() {
                 <h3 className="text-lg font-semibold">Income Tracking</h3>
                 <p className="text-sm text-muted-foreground">Monitor all revenue streams and payment receipts</p>
               </div>
-              <Button size="sm">
-                <Plus className="mr-2 h-4 w-4" />
-                Record Income
-              </Button>
+              <Dialog open={isAddIncomeOpen} onOpenChange={setIsAddIncomeOpen}>
+                <DialogTrigger asChild>
+                  <Button size="sm">
+                    <Plus className="mr-2 h-4 w-4" />
+                    Record Income
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-2xl">
+                  <DialogHeader>
+                    <DialogTitle>Record New Income</DialogTitle>
+                  </DialogHeader>
+                  <div className="grid gap-6 py-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="income-description">Description *</Label>
+                        <Input
+                          id="income-description"
+                          placeholder="Monthly Retainer, Project Payment, etc."
+                          value={newIncome.description}
+                          onChange={(e) => setNewIncome({ ...newIncome, description: e.target.value })}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="income-category">Category</Label>
+                        <Select
+                          value={newIncome.category}
+                          onValueChange={(value) => setNewIncome({ ...newIncome, category: value })}
+                        >
+                          <SelectTrigger id="income-category">
+                            <SelectValue placeholder="Select category" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Retainer">Retainer</SelectItem>
+                            <SelectItem value="Project">Project</SelectItem>
+                            <SelectItem value="Consulting">Consulting</SelectItem>
+                            <SelectItem value="Management Fee">Management Fee</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="income-client">Client *</Label>
+                        <Select
+                          value={newIncome.client}
+                          onValueChange={(value) => setNewIncome({ ...newIncome, client: value })}
+                        >
+                          <SelectTrigger id="income-client">
+                            <SelectValue placeholder="Select client" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="TechCorp Inc">TechCorp Inc</SelectItem>
+                            <SelectItem value="StartupXYZ">StartupXYZ</SelectItem>
+                            <SelectItem value="GrowthLabs">GrowthLabs</SelectItem>
+                            <SelectItem value="MediaFlow">MediaFlow</SelectItem>
+                            <SelectItem value="BrandFirst">BrandFirst</SelectItem>
+                            <SelectItem value="FinanceFirst">FinanceFirst</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="income-project">Project</Label>
+                        <Input
+                          id="income-project"
+                          placeholder="Project name or ID"
+                          value={newIncome.project}
+                          onChange={(e) => setNewIncome({ ...newIncome, project: e.target.value })}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="income-amount">Amount ($) *</Label>
+                        <Input
+                          id="income-amount"
+                          type="number"
+                          placeholder="0.00"
+                          value={newIncome.amount || ""}
+                          onChange={(e) => setNewIncome({ ...newIncome, amount: Number(e.target.value) })}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="income-tax">Tax Amount ($)</Label>
+                        <Input
+                          id="income-tax"
+                          type="number"
+                          placeholder="0.00"
+                          value={newIncome.taxAmount || ""}
+                          onChange={(e) => setNewIncome({ ...newIncome, taxAmount: Number(e.target.value) })}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="income-date">Date</Label>
+                        <Input
+                          id="income-date"
+                          type="date"
+                          value={newIncome.date}
+                          onChange={(e) => setNewIncome({ ...newIncome, date: e.target.value })}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="income-method">Payment Method</Label>
+                        <Select
+                          value={newIncome.paymentMethod}
+                          onValueChange={(value) => setNewIncome({ ...newIncome, paymentMethod: value })}
+                        >
+                          <SelectTrigger id="income-method">
+                            <SelectValue placeholder="Select method" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Bank Transfer">Bank Transfer</SelectItem>
+                            <SelectItem value="Credit Card">Credit Card</SelectItem>
+                            <SelectItem value="ACH">ACH</SelectItem>
+                            <SelectItem value="Wire Transfer">Wire Transfer</SelectItem>
+                            <SelectItem value="PayPal">PayPal</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="income-status">Status</Label>
+                        <Select
+                          value={newIncome.status}
+                          onValueChange={(value) => setNewIncome({ ...newIncome, status: value })}
+                        >
+                          <SelectTrigger id="income-status">
+                            <SelectValue placeholder="Select status" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="received">Received</SelectItem>
+                            <SelectItem value="pending">Pending</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="income-recurring"
+                        checked={newIncome.recurring}
+                        onCheckedChange={(checked) => setNewIncome({ ...newIncome, recurring: !!checked })}
+                      />
+                      <Label htmlFor="income-recurring" className="text-sm font-normal">
+                        This is a recurring payment
+                      </Label>
+                    </div>
+
+                    <div className="flex justify-end gap-2 pt-4 border-t">
+                      <Button variant="outline" onClick={() => setIsAddIncomeOpen(false)}>
+                        Cancel
+                      </Button>
+                      <Button onClick={handleAddIncome}>Record Income</Button>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
             </div>
 
             <div className="grid md:grid-cols-4 gap-4">
@@ -2391,10 +2840,241 @@ export default function FinancesPage() {
                   Track and approve business expenses with detailed categorization
                 </p>
               </div>
-              <Button size="sm">
-                <Plus className="mr-2 h-4 w-4" />
-                Add Expense
-              </Button>
+              <Dialog open={isAddExpenseOpen} onOpenChange={setIsAddExpenseOpen}>
+                <DialogTrigger asChild>
+                  <Button size="sm">
+                    <Plus className="mr-2 h-4 w-4" />
+                    Add Expense
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle>Add New Expense</DialogTitle>
+                  </DialogHeader>
+                  <div className="grid gap-6 py-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="exp-description">Description *</Label>
+                        <Input
+                          id="exp-description"
+                          placeholder="Adobe Creative Cloud, Google Ads, etc."
+                          value={newExpense.description}
+                          onChange={(e) => setNewExpense({ ...newExpense, description: e.target.value })}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="exp-vendor">Vendor *</Label>
+                        <Input
+                          id="exp-vendor"
+                          placeholder="Vendor or supplier name"
+                          value={newExpense.vendor}
+                          onChange={(e) => setNewExpense({ ...newExpense, vendor: e.target.value })}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="exp-amount">Amount ($) *</Label>
+                        <Input
+                          id="exp-amount"
+                          type="number"
+                          placeholder="0.00"
+                          value={newExpense.amount || ""}
+                          onChange={(e) => setNewExpense({ ...newExpense, amount: Number(e.target.value) })}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="exp-date">Date</Label>
+                        <Input
+                          id="exp-date"
+                          type="date"
+                          value={newExpense.date}
+                          onChange={(e) => setNewExpense({ ...newExpense, date: e.target.value })}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="exp-category">Category</Label>
+                        <Select
+                          value={newExpense.category}
+                          onValueChange={(value) => setNewExpense({ ...newExpense, category: value })}
+                        >
+                          <SelectTrigger id="exp-category">
+                            <SelectValue placeholder="Select category" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Software">Software</SelectItem>
+                            <SelectItem value="Operations">Operations</SelectItem>
+                            <SelectItem value="Contractors">Contractors</SelectItem>
+                            <SelectItem value="Advertising">Advertising</SelectItem>
+                            <SelectItem value="Infrastructure">Infrastructure</SelectItem>
+                            <SelectItem value="Team">Team</SelectItem>
+                            <SelectItem value="Training">Training</SelectItem>
+                            <SelectItem value="Client Relations">Client Relations</SelectItem>
+                            <SelectItem value="Assets">Assets</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="exp-dept">Department</Label>
+                        <Select
+                          value={newExpense.department}
+                          onValueChange={(value) => setNewExpense({ ...newExpense, department: value })}
+                        >
+                          <SelectTrigger id="exp-dept">
+                            <SelectValue placeholder="Select department" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Creative">Creative</SelectItem>
+                            <SelectItem value="Marketing">Marketing</SelectItem>
+                            <SelectItem value="Operations">Operations</SelectItem>
+                            <SelectItem value="Sales">Sales</SelectItem>
+                            <SelectItem value="Development">Development</SelectItem>
+                            <SelectItem value="HR">HR</SelectItem>
+                            <SelectItem value="Business Development">Business Development</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="exp-project">Project (Optional)</Label>
+                        <Select
+                          value={newExpense.project}
+                          onValueChange={(value) => setNewExpense({ ...newExpense, project: value })}
+                        >
+                          <SelectTrigger id="exp-project">
+                            <SelectValue placeholder="Select project" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">None</SelectItem>
+                            <SelectItem value="PRJ-001">Website Redesign (PRJ-001)</SelectItem>
+                            <SelectItem value="PRJ-002">SEO Campaign (PRJ-002)</SelectItem>
+                            <SelectItem value="PRJ-006">E-commerce Platform (PRJ-006)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="exp-status">Payment Status</Label>
+                        <Select
+                          value={newExpense.status}
+                          onValueChange={(value) => setNewExpense({ ...newExpense, status: value })}
+                        >
+                          <SelectTrigger id="exp-status">
+                            <SelectValue placeholder="Select status" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="paid">Paid</SelectItem>
+                            <SelectItem value="pending">Pending</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="exp-approval">Approval Status</Label>
+                        <Select
+                          value={newExpense.approvalStatus}
+                          onValueChange={(value) => setNewExpense({ ...newExpense, approvalStatus: value })}
+                        >
+                          <SelectTrigger id="exp-approval">
+                            <SelectValue placeholder="Select status" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="approved">Approved</SelectItem>
+                            <SelectItem value="pending">Pending Approval</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="exp-method">Payment Method</Label>
+                        <Select
+                          value={newExpense.paymentMethod}
+                          onValueChange={(value) => setNewExpense({ ...newExpense, paymentMethod: value })}
+                        >
+                          <SelectTrigger id="exp-method">
+                            <SelectValue placeholder="Select method" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Credit Card">Credit Card</SelectItem>
+                            <SelectItem value="ACH">ACH</SelectItem>
+                            <SelectItem value="PayPal">PayPal</SelectItem>
+                            <SelectItem value="Company Card">Company Card</SelectItem>
+                            <SelectItem value="Bank Transfer">Bank Transfer</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="exp-recurring"
+                          checked={newExpense.recurring}
+                          onCheckedChange={(checked) => setNewExpense({ ...newExpense, recurring: !!checked })}
+                        />
+                        <Label htmlFor="exp-recurring" className="text-sm font-normal">
+                          Recurring expense
+                        </Label>
+                      </div>
+                      {newExpense.recurring && (
+                        <div className="space-y-2">
+                          <Label htmlFor="exp-freq">Frequency</Label>
+                          <Select
+                            value={newExpense.recurringFrequency}
+                            onValueChange={(value) => setNewExpense({ ...newExpense, recurringFrequency: value })}
+                          >
+                            <SelectTrigger id="exp-freq">
+                              <SelectValue placeholder="Select frequency" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="monthly">Monthly</SelectItem>
+                              <SelectItem value="quarterly">Quarterly</SelectItem>
+                              <SelectItem value="yearly">Yearly</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="exp-tax"
+                        checked={newExpense.taxDeductible}
+                        onCheckedChange={(checked) => setNewExpense({ ...newExpense, taxDeductible: !!checked })}
+                      />
+                      <Label htmlFor="exp-tax" className="text-sm font-normal">
+                        Tax deductible expense
+                      </Label>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="exp-notes">Notes</Label>
+                      <Textarea
+                        id="exp-notes"
+                        placeholder="Additional details..."
+                        value={newExpense.notes}
+                        onChange={(e) => setNewExpense({ ...newExpense, notes: e.target.value })}
+                        rows={3}
+                      />
+                    </div>
+
+                    <div className="flex items-center gap-2 p-4 border-2 border-dashed rounded-lg hover:bg-muted/50 transition-colors cursor-pointer">
+                      <Upload className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm text-muted-foreground">Upload receipt or attachment (optional)</span>
+                    </div>
+
+                    <div className="flex justify-end gap-2 pt-4 border-t">
+                      <Button variant="outline" onClick={() => setIsAddExpenseOpen(false)}>
+                        Cancel
+                      </Button>
+                      <Button onClick={handleAddExpense}>Save Expense</Button>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
             </div>
 
             <div className="grid md:grid-cols-4 gap-4">

@@ -14,6 +14,7 @@ import {
   ChevronLeft,
   Zap,
   DollarSign,
+  X,
 } from "lucide-react"
 import { useState } from "react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -29,7 +30,7 @@ const navItems = [
   { href: "/settings", label: "Settings", icon: Settings },
 ]
 
-export function Sidebar() {
+export function Sidebar({ mobile, setMobileOpen }: { mobile?: boolean, setMobileOpen?: (open: boolean) => void }) {
   const pathname = usePathname()
   const [collapsed, setCollapsed] = useState(false)
 
@@ -60,6 +61,7 @@ export function Sidebar() {
             <Link
               key={item.href}
               href={item.href}
+              onClick={() => mobile && setMobileOpen?.(false)}
               className={cn(
                 "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 group",
                 isActive
@@ -104,10 +106,19 @@ export function Sidebar() {
 
         <button
           onClick={() => setCollapsed(!collapsed)}
-          className="flex items-center justify-center w-full py-2 rounded-lg hover:bg-sidebar-accent/50 text-muted-foreground hover:text-sidebar-foreground transition-colors"
+          className="hidden md:flex items-center justify-center w-full py-2 rounded-lg hover:bg-sidebar-accent/50 text-muted-foreground hover:text-sidebar-foreground transition-colors"
         >
           <ChevronLeft className={cn("w-5 h-5 transition-transform duration-300", collapsed && "rotate-180")} />
         </button>
+
+        {mobile && (
+          <button
+            onClick={() => setMobileOpen?.(false)}
+            className="flex md:hidden items-center justify-center w-full py-2 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        )}
       </div>
     </aside>
   )

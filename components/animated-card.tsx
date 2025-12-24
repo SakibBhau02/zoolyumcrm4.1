@@ -4,14 +4,14 @@ import { cn } from "@/lib/utils"
 import { Card } from "@/components/ui/card"
 import type { ReactNode } from "react"
 
-interface AnimatedCardProps {
+interface AnimatedCardProps extends React.HTMLAttributes<HTMLDivElement> {
   children: ReactNode
   className?: string
   delay?: number
   hover?: boolean
 }
 
-export function AnimatedCard({ children, className, delay = 0, hover = true }: AnimatedCardProps) {
+export function AnimatedCard({ children, className, delay = 0, hover = true, ...props }: AnimatedCardProps) {
   return (
     <Card
       className={cn(
@@ -20,6 +20,7 @@ export function AnimatedCard({ children, className, delay = 0, hover = true }: A
         className,
       )}
       style={{ animationDelay: `${delay}ms` }}
+      {...props}
     >
       {children}
     </Card>
